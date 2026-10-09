@@ -17,6 +17,7 @@ export interface NLDSettings {
   autocompleteTriggerPhrase: string;
   isAutosuggestEnabled: boolean;
   appendTimeToDateWhenRelated: boolean;
+  insertOnlyTimeWhenRelated: boolean;
   showDatePickerInSuggest: boolean;
   suggestDefaults: string;
 
@@ -39,6 +40,7 @@ export const DEFAULT_SETTINGS: NLDSettings = {
   autocompleteTriggerPhrase: "@",
   isAutosuggestEnabled: true,
   appendTimeToDateWhenRelated: true,
+  insertOnlyTimeWhenRelated: false,
   showDatePickerInSuggest: true,
   suggestDefaults: DEFAULT_SUGGEST_DEFAULTS,
 
@@ -143,6 +145,20 @@ export class NLDSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.appendTimeToDateWhenRelated)
           .onChange(async (value) => {
             this.plugin.settings.appendTimeToDateWhenRelated = value || false;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Insert only time when relevant")
+      .setDesc(
+        "When enabled, suggestions that include a time (like @now) insert only the time. If dates are wrapped in links, the link points to the date and shows the time. The setting above must also be enabled."
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.insertOnlyTimeWhenRelated)
+          .onChange(async (value) => {
+            this.plugin.settings.insertOnlyTimeWhenRelated = value;
             await this.plugin.saveSettings();
           })
       );

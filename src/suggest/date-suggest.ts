@@ -161,25 +161,35 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
       const parsedDate = this.plugin.parseDate(suggestion.label);
       dateStr = parsedDate.formattedString;
 
-      // When autosuggest-to-link is on, append-time is enabled, and the parsed
-      // result includes a time portion, wrap the full date-time as an alias
-      // on the date-only target (e.g. [[2025-04-29|2025-04-29 15:44]]).
+      // When append-time is enabled and the parsed result includes a time
+      // portion, wrap the date-time (or only the time, if insert-only-time is
+      // enabled) as an alias on the date-only target
+      // (e.g. [[2025-04-29|2025-04-29 15:44]] or [[2025-04-29|15:44]]).
+      // Without links, insert-only-time inserts the plain time.
       // Shift+Enter preserves the typed query as the alias instead.
-      if (makeIntoLink && this.plugin.settings.appendTimeToDateWhenRelated) {
+      if (this.plugin.settings.appendTimeToDateWhenRelated) {
         const dateOnly = parsedDate.moment.format(this.plugin.settings.format);
         const timeOnly = parsedDate.moment.format(this.plugin.settings.timeFormat);
         const expectedFullDatetime = dateOnly + this.plugin.settings.separator + timeOnly;
 
         if (dateStr === expectedFullDatetime) {
-          const alias = includeAlias
-            ? this.context.query || suggestion.label
+          const displayStr = this.plugin.settings.insertOnlyTimeWhenRelated
+            ? timeOnly
             : dateStr;
-          dateStr = generateMarkdownLink(
-            this.app,
-            getDateLinkPath(dateOnly, this.plugin.settings.linkDateFolder),
-            alias
-          );
-          makeIntoLink = false; // already handled
+
+          if (makeIntoLink) {
+            const alias = includeAlias
+              ? this.context.query || suggestion.label
+              : displayStr;
+            dateStr = generateMarkdownLink(
+              this.app,
+              getDateLinkPath(dateOnly, this.plugin.settings.linkDateFolder),
+              alias
+            );
+            makeIntoLink = false; // already handled
+          } else {
+            dateStr = displayStr;
+          }
         }
       }
     }

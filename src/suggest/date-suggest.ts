@@ -4,7 +4,10 @@ import {
   EditorPosition,
   EditorSuggest,
   EditorSuggestContext,
-  EditorSuggestTriggerInfo
+  EditorSuggestTriggerInfo,
+  Instruction,
+  Modifier,
+  Platform
 } from "obsidian";
 import type NaturalLanguageDates from "src/main";
 import CalendarPickerModal from "src/modals/calendar-picker";
@@ -26,14 +29,60 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
     this.app = app;
     this.plugin = plugin;
 
-    this.scope.register(["Shift"], "Enter", (evt: KeyboardEvent) => {
-      (this as unknown as { suggestions: { useSelectedItem(evt: KeyboardEvent): void } }).suggestions.useSelectedItem(evt);
-      return false;
-    });
-
-    if (this.plugin.settings.autosuggestToggleLink) {
-      this.setInstructions([{ command: "Shift", purpose: "Keep text as alias" }]);
+    const modifierCombos: Modifier[][] = [
+      ["Shift"],
+      ["Mod"],
+      ["Alt"],
+      ["Shift", "Mod"],
+      ["Shift", "Alt"],
+    ];
+    for (const modifiers of modifierCombos) {
+      this.scope.register(modifiers, "Enter", (evt: KeyboardEvent) => {
+        (this as unknown as { suggestions: { useSelectedItem(evt: KeyboardEvent): void } }).suggestions.useSelectedItem(evt);
+        return false;
+      });
     }
+
+    this.updateInstructions();
+  }
+
+  open(): void {
+    this.updateInstructions();
+    super.open();
+  }
+
+  private updateInstructions(): void {
+    const instructions: Instruction[] = [];
+    const { settings } = this.plugin;
+
+    if (settings.autosuggestToggleLink) {
+      instructions.push({ command: "Shift", purpose: "Keep text as alias" });
+    }
+
+    if (settings.appendTimeToDateWhenRelated) {
+      instructions.push({
+        command: this.getTimeModifierLabel(),
+        purpose: settings.insertOnlyTimeWhenRelated
+          ? "Insert date and time"
+          : "Insert only time",
+      });
+    }
+
+    this.setInstructions(instructions);
+  }
+
+  private getTimeModifierLabel(): string {
+    if (this.plugin.settings.timeInsertionModifier === "Alt") {
+      return Platform.isMacOS ? "Option" : "Alt";
+    }
+    return Platform.isMacOS ? "Cmd" : "Ctrl";
+  }
+
+  private isTimeModifierPressed(event: KeyboardEvent | MouseEvent): boolean {
+    if (this.plugin.settings.timeInsertionModifier === "Alt") {
+      return event.altKey;
+    }
+    return Platform.isMacOS ? event.metaKey : event.ctrlKey;
   }
 
   getSuggestions(context: EditorSuggestContext): IDateCompletion[] {
@@ -114,6 +163,7 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
   }
 
   renderSuggestion(suggestion: IDateCompletion, el: HTMLElement): void {
+    el.addClass("nld-suggest-item");
     if (suggestion.isCalendarTrigger) {
       el.addClass("nld-suggest-calendar");
       el.createEl("span", { text: "📅 " });
@@ -173,9 +223,10 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
         const expectedFullDatetime = dateOnly + this.plugin.settings.separator + timeOnly;
 
         if (dateStr === expectedFullDatetime) {
-          const displayStr = this.plugin.settings.insertOnlyTimeWhenRelated
-            ? timeOnly
-            : dateStr;
+          // The time insertion modifier flips the insert-only-time setting
+          const insertOnlyTime =
+            this.plugin.settings.insertOnlyTimeWhenRelated !== this.isTimeModifierPressed(event);
+          const displayStr = insertOnlyTime ? timeOnly : dateStr;
 
           if (makeIntoLink) {
             const alias = includeAlias

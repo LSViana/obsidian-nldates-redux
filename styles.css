@@ -163,3 +163,22 @@
   align-items: center;
   gap: 2px;
 }
+
+/* Show key hints as two columns (key, action) so the popup stays narrow */
+.suggestion-container:has(.nld-suggest-item) .prompt-instructions {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  justify-content: start;
+  justify-items: start;
+  text-align: left;
+  column-gap: 4px;
+  row-gap: 0;
+}
+
+.suggestion-container:has(.nld-suggest-item) .prompt-instruction {
+  display: contents;
+}
+
+.suggestion-container:has(.nld-suggest-item) .prompt-instruction-command {
+  margin: 0;
+}

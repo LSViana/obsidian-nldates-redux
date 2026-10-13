@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, TextAreaComponent } from "obsidian";
+import { App, Platform, PluginSettingTab, Setting, TextAreaComponent } from "obsidian";
 import NaturalLanguageDates from "./main";
 import { getLocaleWeekStart } from "./utils";
 
@@ -12,12 +12,15 @@ export type DayOfWeek =
   | "saturday"
   | "locale-default";
 
+export type TimeInsertionModifier = "Mod" | "Alt";
+
 export interface NLDSettings {
   autosuggestToggleLink: boolean;
   autocompleteTriggerPhrase: string;
   isAutosuggestEnabled: boolean;
   appendTimeToDateWhenRelated: boolean;
   insertOnlyTimeWhenRelated: boolean;
+  timeInsertionModifier: TimeInsertionModifier;
   showDatePickerInSuggest: boolean;
   suggestDefaults: string;
 
@@ -41,6 +44,7 @@ export const DEFAULT_SETTINGS: NLDSettings = {
   isAutosuggestEnabled: true,
   appendTimeToDateWhenRelated: true,
   insertOnlyTimeWhenRelated: false,
+  timeInsertionModifier: "Mod",
   showDatePickerInSuggest: true,
   suggestDefaults: DEFAULT_SUGGEST_DEFAULTS,
 
@@ -159,6 +163,22 @@ export class NLDSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.insertOnlyTimeWhenRelated)
           .onChange(async (value) => {
             this.plugin.settings.insertOnlyTimeWhenRelated = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Time insertion modifier")
+      .setDesc(
+        "Hold this key when picking a suggestion to flip the setting above for that one insertion."
+      )
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("Mod", Platform.isMacOS ? "Cmd" : "Ctrl")
+          .addOption("Alt", Platform.isMacOS ? "Option" : "Alt")
+          .setValue(this.plugin.settings.timeInsertionModifier)
+          .onChange(async (value: TimeInsertionModifier) => {
+            this.plugin.settings.timeInsertionModifier = value;
             await this.plugin.saveSettings();
           })
       );

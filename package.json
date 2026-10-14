@@ -10,7 +10,7 @@
     "build": "rollup --config rollup.config.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Lucas Viana",
   "license": "MIT",
   "dependencies": {
     "@codemirror/state": "6.5.0",

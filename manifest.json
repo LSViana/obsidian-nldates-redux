@@ -3,7 +3,7 @@
   "name": "Natural Language Dates Redux",
   "description": "Work with dates in natural language. Now with Notion-like behavior!",
   "version": "0.10.0",
-  "author": "Tommy Bergeron",
+  "author": "Lucas Viana",
   "authorUrl": "https://github.com/tbergeron",
   "fundingUrl": "https://www.paypal.com/donate/?hosted_button_id=93Z9BUUD778SG",
   "isDesktopOnly": false,
